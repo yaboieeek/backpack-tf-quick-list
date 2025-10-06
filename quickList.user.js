@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         QuickList
 // @namespace    https://steamcommunity.com/profiles/76561198967088046
-// @version      1.1.1
+// @version      1.1.2
 // @description  make listings faster without moving from your backpack page
 // @author       eeek
 // @match        https://backpack.tf/profiles/*
@@ -64,6 +64,7 @@ class UserInfo {
         if (savedTradelink) {
             return savedTradelink;
         }
+
         const userLink = document.querySelector('.user-link');
         let tradelink;
 
@@ -473,17 +474,22 @@ class App {
     }
 
 }
-const link = document.createElement('link');
-link.rel = 'stylesheet';
-link.href = 'https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/css/iziToast.min.css';
-document.head.appendChild(link);
-const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/js/iziToast.min.js';
-document.head.appendChild(script);
+const myID = document.querySelector('.username>a').getAttribute('href').replace('/profiles/', '');
+if (window.location.pathname.endsWith(myID)) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/css/iziToast.min.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/izitoast@1.4.0/dist/js/iziToast.min.js';
+    document.head.appendChild(script);
 
-script.onload = () => {
-    new App(new UserInfo().fromPage())
-};
+    script.onload = () => {
+
+        new App(new UserInfo().fromPage())
+    };
+}
+
 
 
 GM_addStyle(`
@@ -624,7 +630,3 @@ position: fixed;
     }
 }
 `)
-
-
-
-
