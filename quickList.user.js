@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         QuickList
 // @namespace    https://steamcommunity.com/profiles/76561198967088046
-// @version      1.1.0
+// @version      1.1.1
 // @description  make listings faster without moving from your backpack page
 // @author       eeek
 // @match        https://backpack.tf/profiles/*
@@ -246,11 +246,14 @@ class ModalListingUIConstructor {
         this.itemElement = itemElement;
         this.modal = modal;
         this.data = {...this.userinfo, ...Item.fromElement(itemElement, this.userinfo)};
-        console.log(this.data)
+        this.state = '';
+        this.listingElement = null;
+        console.log(this.data);
     }
 
     constructListing() {
         const listingBody = document.createElement('div');
+        this.listingElement = listingBody;
         const [listingTextArea, keyPriceArea, metalPriceArea] = [document.createElement('textarea'),document.createElement('input'),document.createElement('input')];
         const [keyLabel, metalLabel] = [document.createElement('label'),document.createElement('label')];
         const [removeFromQueryButton, publishListingButton] = [document.createElement('button'), document.createElement('button')];
@@ -292,8 +295,8 @@ class ModalListingUIConstructor {
         publishListingButton.title = 'Publish this listing';
 
         [keyPriceArea, metalPriceArea].forEach((e, index) => {
-            e.inputmode = 'numberic';
-            e.placeholder = 0;
+            e.inputmode = 'numeric';
+            e.placeholder = '0';
             calcWidth(e);
             e.addEventListener('change',() => {
                 calcWidth(e);
@@ -338,25 +341,26 @@ class ModalListingUIConstructor {
 
         publishListingButton.addEventListener('click', () => {
             const params = this.constructParams(keyPriceArea.value, metalPriceArea.value, listingTextArea.value);
-            listingBody.classList.add('listing-process');
+            this.updateState('listing-process');
             this.sendRequest(params).then(res => {
-                listingBody.classList.remove('listing-process');
-                listingBody.classList.add('success');
+                this.updateState('success');
                 iziToast.success({
                     title: `Success!`,
                     message: `Listing for ${this.data.itemEffectName ? this.data.itemEffectName + ' ' + this.data.itemName : this.data.itemName} is created!`
                 })
                 setTimeout(() => this.removeListing(), 500);
             }).catch(e => {
-                listingBody.classList.remove('listing-process');
-
-                listingBody.classList.add('fail');
+                this.updateState('fail');
                 iziToast.error({
                     title: `Error!`,
                     message: `Failed to create listing for ${this.data.itemEffectName ? this.data.itemEffectName + ' ' + this.data.itemName : this.data.itemName}.${e}`
                 })
             });
         });
+
+        if (this.state) {
+            this.updateState(this.state);
+        }
         listingBody.append(this.itemElement, controlsContainer, buttonsContainer);
 
         this.itemElement.addEventListener('click', (e) => {
@@ -368,7 +372,6 @@ class ModalListingUIConstructor {
 
             e.ctrlKey && prevent()
         });
-
         return listingBody
     }
 
@@ -416,6 +419,21 @@ class ModalListingUIConstructor {
             id: this.data.id,
             'user-id': this.data.userid
         }
+    }
+
+    updateState(newState) {
+        if (!this.listingElement) return;
+        this.listingElement.classList.remove('listing-process', 'success', 'fail');
+        if (newState) {
+            this.listingElement.classList.add(newState);
+        }
+        this.state = newState;
+        const buttons = this.listingElement.querySelectorAll('button');
+        const inputs = this.listingElement.querySelectorAll('input, textarea');
+        const isDisabled = newState === 'listing-process';
+
+        buttons.forEach(btn => btn.disabled = isDisabled);
+        inputs.forEach(input => input.disabled = isDisabled);
     }
 
 }
@@ -606,3 +624,7 @@ position: fixed;
     }
 }
 `)
+
+
+
+
