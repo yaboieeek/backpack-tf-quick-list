@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         QuickList
 // @namespace    https://steamcommunity.com/profiles/76561198967088046
-// @version      1.0.0
+// @version      1.1.0
 // @description  make listings faster without moving from your backpack page
 // @author       eeek
 // @match        https://backpack.tf/profiles/*
@@ -34,7 +34,7 @@ const cfg = {
     },
 
     scriptDefaults: {
-        startToggled: true,
+        startToggled: false,
         listingDelay: 0.5 * 1000,
     }
 }
@@ -175,7 +175,7 @@ class Modal {
         page.append(this.modal, toggleButton);
 
 
-        this.toggleModal();
+        cfg.scriptDefaults.startToggled && this.toggleModal();
     }
 
     toggleModal() {
@@ -229,9 +229,9 @@ class Modal {
     }
 
     async publishAll() {
-        for (const button of this.modalBody.querySelectorAll('.ql-publishlistingbutton')) {
+        for (const listing of this.modalBody.querySelectorAll('.ql-listing')) {
             await this.delay(cfg.scriptDefaults.listDelay);
-            button.click();
+            listing.querySelector('.ql-publishlistingbutton').click();
         };
     }
 
@@ -338,7 +338,9 @@ class ModalListingUIConstructor {
 
         publishListingButton.addEventListener('click', () => {
             const params = this.constructParams(keyPriceArea.value, metalPriceArea.value, listingTextArea.value);
+            listingBody.classList.add('listing-process');
             this.sendRequest(params).then(res => {
+                listingBody.classList.remove('listing-process');
                 listingBody.classList.add('success');
                 iziToast.success({
                     title: `Success!`,
@@ -346,6 +348,8 @@ class ModalListingUIConstructor {
                 })
                 setTimeout(() => this.removeListing(), 500);
             }).catch(e => {
+                listingBody.classList.remove('listing-process');
+
                 listingBody.classList.add('fail');
                 iziToast.error({
                     title: `Error!`,
@@ -371,7 +375,7 @@ class ModalListingUIConstructor {
     removeListing() {
         this.modal.listingsToMake = this.modal.listingsToMake.filter(elem => elem !== this.itemElement);
         this.modal.existingModels = this.modal.existingModels.filter(model => model !== this);
-        this.data.initialNode.append(this.itemElement);
+        this.data.initialNode.prepend(this.itemElement);
         this.modal.updateModal();
     }
 
@@ -588,6 +592,10 @@ position: fixed;
 }
 .fail{
     background-color: #faa;
+}
+
+.listing-process {
+    background-color: #ffec85;
 }
 
 .ql-nothing {
